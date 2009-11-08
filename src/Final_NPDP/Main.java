@@ -5,6 +5,8 @@
 
 package Final_NPDP;
 
+import Clases.*;
+
 /**
  *
  * @author derketzer
@@ -15,7 +17,7 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        Tienda tiendita = new Tienda();
     }
 
 }
