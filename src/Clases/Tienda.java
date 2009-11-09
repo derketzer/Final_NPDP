@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import javax.swing.table.*;
+import java.sql.*;
 
 /**
  *
@@ -14,18 +15,18 @@ import javax.swing.table.*;
  * @email  der_ketzer@der-ketzer.com
  */
 
-//La clase, que es públic, la nombraremos Tienda, ya que es un programa para una tienda.
+//La clase la nombraremos Tienda, ya que es un programa para una tienda.
 public class Tienda extends JFrame{
 
-    JLabel lbl_Nombre, lbl_Fecha, lbl_Calle, lbl_Colonia,
+    JLabel lbl_Nombre, lbl_Calle, lbl_Colonia,
            lbl_CP, lbl_Num, lbl_Estado, lbl_Telefono,
            lbl_Email, lbl_Total, lbl_Pago,
            lbl_TC_Num, lbl_Fecha_Expiracion, lbl_ID, lbl_Subtotal,
            lbl_IVA, lbl_Titulo, lbl_Subtitulo;
 
     JTextField txt_Nombre, txt_Calle, txt_Colonia,
-           txt_CP, txt_Num, txt_Tel_Lada, txt_Tel_Num, txt_Email,
-           txt_Total, txt_TC_Num, txt_ID, txt_Subtotal, txt_IVA;
+               txt_CP, txt_Num, txt_Tel_Lada, txt_Tel_Num, txt_Email,
+               txt_Total, txt_TC_Num, txt_ID, txt_Subtotal, txt_IVA;
 
     JRadioButton rad_Cheque, rad_TC;
 
@@ -34,11 +35,13 @@ public class Tienda extends JFrame{
     JButton btn_Guardar, btn_Limpiar, btn_Salir;
 
     String[] Lista_Meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo",
-                       "Junio", "Julio", "Agosto", "Septiembre",
-                       "Octubre", "Noviembre", "Diciembre"
-                     };
+                             "Junio", "Julio", "Agosto", "Septiembre",
+                             "Octubre", "Noviembre", "Diciembre"
+                           };
 
-    String[] Lista_Colores = {"Amarillo", "Azul", "Beige", "Blanco", "Morado", "Naranja", "Negro", "Rojo", "Rosa", "Violeta"};
+    String[] Lista_Colores = {"Amarillo", "Azul", "Beige", "Blanco", "Morado",
+                              "Naranja", "Negro", "Rojo", "Rosa", "Violeta"
+                             };
 
     String[] Lista_Tamanhos = {"Chico", "Mediano", "Grande", "Extragrande"};
 
@@ -50,14 +53,16 @@ public class Tienda extends JFrame{
     ArrayList Dias = new ArrayList();
     Object[] Lista_Anhos;
     Object[] Lista_Dias;
-    JComboBox com_TC_Anho, com_TC_Mes, com_TC_Dia, com_Anho, com_Mese, com_Dia, com_Colores, com_Tamanhos;
+    JComboBox com_TC_Anho, com_TC_Mes, com_TC_Dia, com_Colores, com_Tamanhos;
 
-    JTable Tabla;
-    TableModel Modelo;
+    JTable      Tabla;
+    TableModel  Modelo;
 
     Object Datos[][];
     JScrollPane Scroll;
-    String Encabezados[] = {"ID Producto", "Descripcion", "Cantidad", "Tamaño", "Color", "Precio Unitario", "Subtotal"};
+    String Encabezados[] = {"ID Producto", "Descripcion", "Cantidad", "Tamaño",
+                            "Color", "Precio Unitario", "Subtotal"
+                           };
 
     TableColumn tc_IDProducto;
     TableColumn tc_Descripcion;
@@ -70,6 +75,15 @@ public class Tienda extends JFrame{
     int Max_Rows, Max_Cols;
 
     Double Gran_Subtotal, IVA, Total;
+
+    Connection  Mysqli;
+    Statement   State, Select;
+
+    String DBhost = "localhost";
+    String DBname = "Final_NPDP";
+    String DBuser = "npdp";
+    String DBpass = "V_@E)dY<b!pvx.|&";
+    String DBtipo = "mysql";
 
     public Tienda(){
 
@@ -88,7 +102,6 @@ public class Tienda extends JFrame{
 
         lbl_ID                  = new JLabel("ID");
         lbl_Nombre              = new JLabel("Nombre: ");
-        lbl_Fecha               = new JLabel("Fecha: ");
         lbl_Calle               = new JLabel("Calle: ");
         lbl_Colonia             = new JLabel("Colonia: ");
         lbl_CP                  = new JLabel("C.P. ");
@@ -139,6 +152,8 @@ public class Tienda extends JFrame{
         btn_Limpiar             = new JButton("Limpiar");
         btn_Salir               = new JButton("Salir");
 
+        Conecta();
+        
         setTitle("DirectClothing, Inc. - \"The Shirt Company\"");
 
         Pantalla.setLayout(Layout);
@@ -154,13 +169,6 @@ public class Tienda extends JFrame{
         JComboBox com_TC_Mes = new JComboBox(Lista_Meses);
         //Crea el combobox de los años para la TC
         JComboBox com_TC_Anho = new JComboBox(Lista_Anhos);
-
-        //Crea el combobox de los meses para la fecha
-        JComboBox com_Dia = new JComboBox(Lista_Dias);
-        //Crea el combobox de los meses para la fecha
-        JComboBox com_Mes = new JComboBox(Lista_Meses);
-        //Crea el combobox de los años para la fecha
-        JComboBox com_Anho = new JComboBox(Lista_Anhos);
 
         JComboBox com_Colores = new JComboBox(Lista_Colores);
 
@@ -197,15 +205,27 @@ public class Tienda extends JFrame{
             }
             public void setValueAt(Object objeto, int row, int col){
                 if(col == 0){
-                    if(objeto.toString().length() >= 5){
-                        Datos[row][1] = "Hello World!";
-                        Datos[row][5] = "10";
+                    try{
+                        Select.execute("SELECT Descripcion, Precio FROM"
+                                       + " Productos WHERE ID='"
+                                       + objeto.toString() + "'");
+                        
+                        ResultSet RS = Select.getResultSet();
+                        
+                        if(RS.next()){
 
-                        Tabla.repaint();
+                            Datos[row][1] = RS.getString("Descripcion");
+                            Datos[row][5] = RS.getString("Precio");
+                        }
+                        else{
+                            Alerta("El producto no existe!");
+                        }
                     }
-                    else{
-                        JOptionPane.showMessageDialog(null, "ID inválido, tiene que ser al menos de 5 dígitos.");
+                    catch(Exception e){
+                        Alerta(e.getMessage());
                     }
+
+                    Tabla.repaint();
                 }
                 
                 if(col == 2){
@@ -220,10 +240,7 @@ public class Tienda extends JFrame{
 
                     for(int i=0; i<Datos.length; i++){
                         String val3 = Datos[i][6].toString();
-
-                        if(val3 != ""){
-                            Gran_Subtotal += Double.valueOf(val3);
-                        }
+                        Gran_Subtotal += Double.valueOf(val3);
                     }
 
                     IVA = Gran_Subtotal*0.15;
@@ -243,10 +260,10 @@ public class Tienda extends JFrame{
             }
         };
 
-        Tabla = new JTable(Modelo);
-        Scroll = new JScrollPane(Tabla);
+        Tabla       = new JTable(Modelo);
+        Scroll      = new JScrollPane(Tabla);
 
-        tc_Tamanho   = Tabla.getColumn("Tamaño");
+        tc_Tamanho  = Tabla.getColumn("Tamaño");
         tc_Color    = Tabla.getColumn("Color");
 
         tc_Tamanho.setCellEditor(new DefaultCellEditor(com_Tamanhos));
@@ -260,11 +277,7 @@ public class Tienda extends JFrame{
         buildConstraints(txt_ID         , 4, 2, 2, 1, GridBagConstraints.HORIZONTAL);
 
         buildConstraints(lbl_Nombre     , 0, 3, 1, 1, GridBagConstraints.NONE);
-        buildConstraints(txt_Nombre     , 1, 3, 1, 1, GridBagConstraints.HORIZONTAL);
-        buildConstraints(lbl_Fecha      , 2, 3, 1, 1, GridBagConstraints.NONE);
-        buildConstraints(com_Dia        , 3, 3, 1, 1, GridBagConstraints.NONE);
-        buildConstraints(com_Mes        , 4, 3, 1, 1, GridBagConstraints.NONE);
-        buildConstraints(com_Anho       , 5, 3, 1, 1, GridBagConstraints.NONE);
+        buildConstraints(txt_Nombre     , 1, 3, 2, 1, GridBagConstraints.HORIZONTAL);
 
         buildConstraints(lbl_Calle      , 0, 4, 1, 1, GridBagConstraints.NONE);
         buildConstraints(txt_Calle      , 1, 4, 2, 1, GridBagConstraints.HORIZONTAL);
@@ -319,7 +332,16 @@ public class Tienda extends JFrame{
         setSize(800,600);
         setVisible(true);
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+		Desconecta();
+                System.exit(0);
+            }
+            public void windowOpened(WindowEvent e) {
+                setExtendedState(Frame.MAXIMIZED_BOTH);
+            }
+
+        });
 
         btn_Guardar.addActionListener(new Eventos());
         btn_Limpiar.addActionListener(new Eventos());
@@ -346,22 +368,62 @@ public class Tienda extends JFrame{
     public class Eventos implements ActionListener{
         public void actionPerformed(ActionEvent e){
             if(e.getSource() == btn_Guardar){
-                if(txt_ID.getText().matches("^\\s*$")){
-                    JOptionPane.showMessageDialog(null, "Falta ID");
+                if(txt_Nombre.getText().matches("^\\s*$")){
+                    Alerta("Falta el \"Nombre\"");
                 }
-                else if(!txt_ID.getText().matches("([0-9]*)")){
-                    JOptionPane.showMessageDialog(null, "El ID sólo puede ser numérico");
+                else if(txt_Calle.getText().matches("^\\s*$")){
+                    Alerta("Falta la \"Calle\"");
+                }
+                else if(txt_Colonia.getText().matches("^\\s*$")){
+                    Alerta("Falta la \"Colonia\"");
+                }
+                else if(txt_Tel_Lada.getText().matches("^\\s*$")){
+                    Alerta("Falta la \"Lada\"");
+                }
+                else if(!txt_Tel_Lada.getText().matches("([0-9]*)")){
+                    Alerta("La \"Lada\" sólo puede ser numérica");
+                }
+                else if(txt_Tel_Num.getText().matches("^\\s*$")){
+                    Alerta("Falta el \"Número telefónico\"");
+                }
+                else if(!txt_Tel_Num.getText().matches("([0-9]*)")){
+                    Alerta("El \"Número telefónico\" sólo puede ser numérico");
+                }
+                else if(txt_Num.getText().matches("^\\s*$")){
+                    Alerta("Falta el \"Número\"");
+                }
+                else if(!txt_Num.getText().matches("([0-9]*)")){
+                    Alerta("El \"Número\" sólo puede ser numérico");
+                }
+                else if(txt_CP.getText().matches("^\\s*$")){
+                    Alerta("Falta el \"CP\"");
+                }
+                else if(!txt_CP.getText().matches("([0-9]*)")){
+                    Alerta("El \"CP\" sólo puede ser numérico");
+                }
+                else if(txt_Email.getText().matches("^\\s*$")){
+                    Alerta("Falta el \"Email\"");
                 }
                 else if(!txt_Email.getText().matches(".+@.+\\.[a-z]+")){
-                    JOptionPane.showMessageDialog(null, "El E-Mail es inválido");
+                    Alerta("El \"E-Mail\" es inválido");
+                }
+                else if(rad_TC.isSelected()){
+                    if(txt_TC_Num.getText().matches("^\\s*$")){
+                        Alerta("Falta la \"Tarjeta de crédito\"");
+                    }
+                    else if(!txt_TC_Num.getText().matches(".+@.+\\.[a-z]+")){
+                        Alerta("La \"Tarjeta de crédito\" sólo pueden ser números.");
+                    }
                 }
                 else{
+                    //Guarda todo
                 }
             }
             else if(e.getSource() == btn_Limpiar){
                 
             }
             else if(e.getSource() == btn_Salir){
+                Desconecta();
                 System.exit(0);
             }
             else if(e.getSource() == rad_TC){
@@ -382,4 +444,88 @@ public class Tienda extends JFrame{
             }
         }
     }
+
+    void Alerta(String e){
+        JOptionPane.showMessageDialog(null,"Error: " + e);
+    }
+
+    void Conecta(){
+        String val = "";
+
+        try{
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            Mysqli = DriverManager.getConnection("jdbc:" + DBtipo + "://" + DBhost
+                                                 + "/" + DBname + "", DBuser, DBpass);
+            Select = Mysqli.createStatement();
+        }catch(Exception e){
+            Alerta(e.getMessage());
+        }
+
+        try{
+            Select.execute("CREATE TABLE IF NOT EXISTS Productos (ID int(11) NOT NULL auto_increment,"
+                           + "Descripcion longtext NOT NULL, Precio_Unitario decimal(10,2) NOT NULL,"
+                           + "PRIMARY KEY  (ID))");
+        }
+        catch(Exception e){
+            Alerta("No se pudo crear la tabla \"Productos\" porque " + e.getMessage());
+        }
+
+        try{
+            Select.execute("CREATE TABLE IF NOT EXISTS Almacen (ID_Producto int(11) NOT NULL,"
+                           + "Cantidad int(11) NOT NULL, PRIMARY KEY (ID_Producto), UNIQUE KEY"
+                           + " Almacen_Prod_ID (ID_Producto))");
+        }
+        catch(Exception e){
+            Alerta("No se pudo crear la tabla \"Almacen\" porque " + e.getMessage());
+        }
+
+        try{
+            Select.execute("CREATE TABLE IF NOT EXISTS Clientes (ID int(11) NOT NULL auto_increment,"
+                           + "Nombre varchar(255) NOT NULL, Calle varchar(100)NOT NULL, Num int(5) NOT"
+                           + " NULL, Colonia varchar(100) NOT NULL, CP int(5) NOT NULL, Telefono "
+                           + "varchar(20) NOT NULL, Email varchar(150) NOT NULL,"
+                           + "PRIMARY KEY (ID))");
+        }
+        catch(Exception e){
+            Alerta("No se pudo crear la tabla \"Clientes\" porque " + e.getMessage());
+        }
+
+        try{
+            Select.execute("CREATE TABLE IF NOT EXISTS Pedidos (ID int(11) NOT NULL auto_increment,"
+                           + "Cliente_ID int(11) NOT NULL, Fecha datetime NOT NULL, Subtotal decimal(10,2)"
+                           + "NOT NULL, IVA decimal(10,2) NOT NULL, Total decimal(10,2) NOT NULL,"
+                           + "PRIMARY KEY (ID))");
+        }
+        catch(Exception e){
+            Alerta("No se pudo crear la tabla \"Pedidos\" porque " + e.getMessage());
+        }
+
+        try{
+            Select.execute("CREATE TABLE IF NOT EXISTS Partidas (ID int(11) NOT NULL auto_increment,"
+                           + "Pedido_ID int(11) NOT NULL, Producto_ID int(11) NOT NULL, Cantidad int(11)"
+                           + "NOT NULL, PRIMARY KEY (ID))");
+        }
+        catch(Exception e){
+            Alerta("No se pudo crear la tabla \"Partidas\" porque " + e.getMessage());
+        }
+
+        try{
+            Select.execute("SHOW TABLE STATUS LIKE 'Pedidos'");
+            ResultSet RS = Select.getResultSet();
+            RS.next();
+            txt_ID.setText(RS.getString("Auto_increment"));
+        }
+        catch(Exception e){
+        }
+    }
+
+    void Desconecta(){
+        try{
+            Select.close();
+            Mysqli.close();
+        }catch(Exception e){
+            Alerta(e.getMessage());
+        }
+    }
+
 }
