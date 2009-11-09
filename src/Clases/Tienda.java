@@ -72,7 +72,7 @@ public class Tienda extends JFrame{
     TableColumn tc_Precio;
     TableColumn tc_Subtotal;
 
-    int Max_Rows, Max_Cols;
+    int Max_Rows, Max_Cols, Flag_Existe;
 
     Double Gran_Subtotal, IVA, Total;
 
@@ -87,8 +87,9 @@ public class Tienda extends JFrame{
 
     public Tienda(){
 
-        Max_Rows = 20;
-        Max_Cols = 7;
+        Max_Rows    = 20;
+        Max_Cols    = 7;
+        Flag_Existe = 0;
 
         //Esto crea el combobox de los años para popularlo
         //Crea el arreglo con los años
@@ -416,11 +417,49 @@ public class Tienda extends JFrame{
                     }
                 }
                 else{
-                    //Guarda todo
+                    //Si no existe el cliente lo guarda
+                    if(Flag_Existe == 0){
+                        try{
+                            //Guarda el cliente
+                            //Select.execute("");
+                        }
+                        catch(Exception p){
+                            Alerta("No se pudo guardar el \"Cliente\" porque " + p.getMessage());
+                        }
+                    }
+
+                    try{
+                        //Guarda el pedido
+                        //Select.execute("");
+                    }
+                    catch(Exception p){
+                        Alerta("No se pudo guardar el \"Pedido\" porque " + p.getMessage());
+                    }
+
+                    try{
+                        //Guarda las partidas
+                        for(int i=0; i<Datos.length; i++){
+                            //Select.execute("");
+                        }
+                    }
+                    catch(Exception p){
+                        Alerta("No se pudieron guardar las \"Partidas\" porque " + p.getMessage());
+                    }
                 }
             }
             else if(e.getSource() == btn_Limpiar){
-                
+                txt_Nombre.setText("");
+                txt_Calle.setText("");
+                txt_Colonia.setText("");
+                txt_CP.setText("");
+                txt_Num.setText("");
+                txt_Tel_Lada.setText("");
+                txt_Tel_Num.setText("");
+                txt_Email.setText("");
+                txt_TC_Num.setText("");
+                txt_Subtotal.setText("");
+                txt_IVA.setText("");
+                txt_Total.setText("");
             }
             else if(e.getSource() == btn_Salir){
                 Desconecta();
