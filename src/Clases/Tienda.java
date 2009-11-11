@@ -18,13 +18,13 @@ import java.sql.*;
 //La clase la nombraremos Tienda, ya que es un programa para una tienda.
 public class Tienda extends JFrame{
 
-    JLabel lbl_Nombre, lbl_Calle, lbl_Colonia,
+    JLabel lbl_Nombre, lbl_Calle, lbl_Colonia, lbl_ID_Cliente,
            lbl_CP, lbl_Num, lbl_Estado, lbl_Telefono,
            lbl_Email, lbl_Total, lbl_Pago,
            lbl_TC_Num, lbl_Fecha_Expiracion, lbl_ID, lbl_Subtotal,
            lbl_IVA, lbl_Titulo, lbl_Subtitulo;
 
-    JTextField txt_Nombre, txt_Calle, txt_Colonia,
+    JTextField txt_Nombre, txt_Calle, txt_Colonia, txt_ID_Cliente,
                txt_CP, txt_Num, txt_Tel_Lada, txt_Tel_Num, txt_Email,
                txt_Total, txt_TC_Num, txt_ID, txt_Subtotal, txt_IVA;
 
@@ -102,6 +102,7 @@ public class Tienda extends JFrame{
         }
 
         lbl_ID                  = new JLabel("ID");
+        lbl_ID_Cliente          = new JLabel("ID Cliente");
         lbl_Nombre              = new JLabel("Nombre: ");
         lbl_Calle               = new JLabel("Calle: ");
         lbl_Colonia             = new JLabel("Colonia: ");
@@ -119,26 +120,27 @@ public class Tienda extends JFrame{
         lbl_Titulo              = new JLabel("DirectClothing, Inc.");
         lbl_Subtitulo           = new JLabel("\"The Shirt Company\"");
 
-        txt_Nombre              = new JTextField(50);
-        txt_Calle               = new JTextField();
-        txt_Colonia             = new JTextField();
-        txt_CP                  = new JTextField();
-        txt_Num                 = new JTextField();
-        txt_Tel_Lada            = new JTextField();
-        txt_Tel_Num             = new JTextField();
-        txt_Email               = new JTextField();
-        txt_TC_Num              = new JTextField();
+        txt_Nombre              = new JTextField();//84
+        txt_Calle               = new JTextField();//84
+        txt_Colonia             = new JTextField();//84
+        txt_CP                  = new JTextField();//5
+        txt_Num                 = new JTextField();//5
+        txt_Tel_Lada            = new JTextField();//4
+        txt_Tel_Num             = new JTextField();//20
+        txt_Email               = new JTextField();//
+        txt_TC_Num              = new JTextField();//20
+        txt_ID_Cliente          = new JTextField();//11
         
-        txt_ID                  = new JTextField();
+        txt_ID                  = new JTextField();//11
         txt_ID.setEditable(false);
 
-        txt_Subtotal            = new JTextField();
+        txt_Subtotal            = new JTextField();//10
         txt_Subtotal.setEditable(false);
 
-        txt_IVA                 = new JTextField();
+        txt_IVA                 = new JTextField();//10
         txt_IVA.setEditable(false);
 
-        txt_Total               = new JTextField();
+        txt_Total               = new JTextField();//10
         txt_Total.setEditable(false);
 
         rad_Cheque              = new JRadioButton("Cheque", true);
@@ -229,7 +231,7 @@ public class Tienda extends JFrame{
                     Tabla.repaint();
                 }
                 
-                if(col == 2){
+                if(col == 2 && Datos[row][5] != ""){
                     String val1 = Datos[row][5].toString();
                     String val2 = objeto.toString();
 
@@ -241,7 +243,9 @@ public class Tienda extends JFrame{
 
                     for(int i=0; i<Datos.length; i++){
                         String val3 = Datos[i][6].toString();
-                        Gran_Subtotal += Double.valueOf(val3);
+                        if(val3 != ""){
+                            Gran_Subtotal += Double.valueOf(val3);
+                        }
                     }
 
                     IVA = Gran_Subtotal*0.15;
@@ -274,6 +278,11 @@ public class Tienda extends JFrame{
 
         buildConstraints(lbl_Subtitulo  , 0, 1, 6, 1, GridBagConstraints.NONE);
 
+        //buildConstraints(lbl_ID         , 3, 2, 1, 1, GridBagConstraints.NONE);
+        //buildConstraints(txt_ID         , 4, 2, 2, 1, GridBagConstraints.HORIZONTAL);
+
+        buildConstraints(lbl_ID_Cliente , 0, 2, 1, 1, GridBagConstraints.NONE);
+        buildConstraints(txt_ID_Cliente , 1, 2, 1, 1, GridBagConstraints.HORIZONTAL);
         buildConstraints(lbl_ID         , 3, 2, 1, 1, GridBagConstraints.NONE);
         buildConstraints(txt_ID         , 4, 2, 2, 1, GridBagConstraints.HORIZONTAL);
 
@@ -350,6 +359,61 @@ public class Tienda extends JFrame{
         //rad_TC.addActionListener(new Eventos());
         //rad_Cheque.addActionListener(new Eventos());
 
+        txt_ID_Cliente.addKeyListener(new KeyAdapter(){
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    try{
+                        Select.execute("SELECT * FROM Clientes WHERE ID='" + txt_ID_Cliente.getText() + "'");
+                        ResultSet RS = Select.getResultSet();
+                        if(RS.next()){
+                            txt_Nombre.setText(RS.getString("Nombre"));
+                            txt_Calle.setText(RS.getString("Calle"));
+                            txt_Num.setText(RS.getString("Numero"));
+                            txt_Colonia.setText(RS.getString("Colonia"));
+                            txt_CP.setText(RS.getString("CP"));
+                            txt_Tel_Lada.setText(RS.getString("Lada"));
+                            txt_Tel_Num.setText(RS.getString("Telefono"));
+                            txt_Email.setText(RS.getString("Email"));
+                            //txt_.setText(RS.getString(""));
+                        }
+                        else{
+                            Limpiame();
+                        }
+                    }
+                    catch(Exception p){
+                        Alerta(p.getMessage());
+                    }
+                }
+            }
+        });
+
+        txt_ID_Cliente.addFocusListener(new FocusListener(){
+            public void focusGained(FocusEvent e) {
+            }
+            public void focusLost(FocusEvent e) {
+                    try{
+                        Select.execute("SELECT * FROM Clientes WHERE ID='" + txt_ID_Cliente.getText() + "'");
+                        ResultSet RS = Select.getResultSet();
+                        if(RS.next()){
+                            txt_Nombre.setText(RS.getString("Nombre"));
+                            txt_Calle.setText(RS.getString("Calle"));
+                            txt_Num.setText(RS.getString("Numero"));
+                            txt_Colonia.setText(RS.getString("Colonia"));
+                            txt_CP.setText(RS.getString("CP"));
+                            txt_Tel_Lada.setText(RS.getString("Lada"));
+                            txt_Tel_Num.setText(RS.getString("Telefono"));
+                            txt_Email.setText(RS.getString("Email"));
+                            //txt_.setText(RS.getString(""));
+                        }
+                        else{
+                            Limpiame();
+                        }
+                    }
+                    catch(Exception p){
+                        Alerta(p.getMessage());
+                    }
+            }
+        });
     }
 
     private void buildConstraints(Component componente, int x, int y, int w, int h, int fill){
@@ -448,18 +512,7 @@ public class Tienda extends JFrame{
                 }
             }
             else if(e.getSource() == btn_Limpiar){
-                txt_Nombre.setText("");
-                txt_Calle.setText("");
-                txt_Colonia.setText("");
-                txt_CP.setText("");
-                txt_Num.setText("");
-                txt_Tel_Lada.setText("");
-                txt_Tel_Num.setText("");
-                txt_Email.setText("");
-                txt_TC_Num.setText("");
-                txt_Subtotal.setText("");
-                txt_IVA.setText("");
-                txt_Total.setText("");
+                Limpiame();
             }
             else if(e.getSource() == btn_Salir){
                 Desconecta();
@@ -565,6 +618,21 @@ public class Tienda extends JFrame{
         }catch(Exception e){
             Alerta(e.getMessage());
         }
+    }
+
+    void Limpiame(){
+        txt_Nombre.setText("");
+        txt_Calle.setText("");
+        txt_Colonia.setText("");
+        txt_CP.setText("");
+        txt_Num.setText("");
+        txt_Tel_Lada.setText("");
+        txt_Tel_Num.setText("");
+        txt_Email.setText("");
+        txt_TC_Num.setText("");
+        txt_Subtotal.setText("");
+        txt_IVA.setText("");
+        txt_Total.setText("");
     }
 
 }
