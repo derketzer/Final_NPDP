@@ -72,7 +72,8 @@ public class Tienda extends JFrame{
     TableColumn tc_Precio;
     TableColumn tc_Subtotal;
 
-    int Max_Rows, Max_Cols, Flag_Existe;
+    int Max_Rows, Max_Cols;
+    boolean Flag_Existe;
 
     Double Gran_Subtotal, IVA, Total;
 
@@ -89,7 +90,7 @@ public class Tienda extends JFrame{
 
         Max_Rows    = 20;
         Max_Cols    = 7;
-        Flag_Existe = 0;
+        Flag_Existe = false;
 
         //Esto crea el combobox de los años para popularlo
         //Crea el arreglo con los años
@@ -235,27 +236,46 @@ public class Tienda extends JFrame{
                     String val1 = Datos[row][5].toString();
                     String val2 = objeto.toString();
 
-                    Double Subtotal = Double.valueOf(val1) * Double.valueOf(val2);
+                    try{
+                        Select.execute("SELECT * FROM Almacen WHERE ID_Producto='" + Datos[row][0].toString() + "'");
+                        ResultSet RS = Select.getResultSet();
 
-                    Datos[row][6] = Subtotal.toString();
-                    
-                    Gran_Subtotal = 0.0;
+                        if(RS.next()){
+                            int Existencias = Integer.parseInt(RS.getString("Cantidad"));
 
-                    for(int i=0; i<Datos.length; i++){
-                        String val3 = Datos[i][6].toString();
-                        if(val3 != ""){
-                            Gran_Subtotal += Double.valueOf(val3);
+                            if(Existencias >= Integer.parseInt(val2)){
+
+                                Double Subtotal = Double.valueOf(val1) * Double.valueOf(val2);
+
+                                Datos[row][6] = Subtotal.toString();
+
+                                Gran_Subtotal = 0.0;
+
+                                for(int i=0; i<Datos.length; i++){
+                                    String val3 = Datos[i][6].toString();
+                                    if(val3 != ""){
+                                        Gran_Subtotal += Double.valueOf(val3);
+                                    }
+                                }
+
+                                IVA = Gran_Subtotal*0.15;
+                                Total = Gran_Subtotal + IVA;
+
+                                txt_Subtotal.setText(Gran_Subtotal.toString());
+                                txt_IVA.setText(IVA.toString());
+                                txt_Total.setText(Total.toString());
+
+                                Tabla.repaint();
+                            }
+                            else{
+                                Alerta("No hay suficientes existencias en almacén.");
+                            }
+                        }
+                        else{
+                            Alerta("No hay suficientes existencias en almacén.");
                         }
                     }
-
-                    IVA = Gran_Subtotal*0.15;
-                    Total = Gran_Subtotal + IVA;
-
-                    txt_Subtotal.setText(Gran_Subtotal.toString());
-                    txt_IVA.setText(IVA.toString());
-                    txt_Total.setText(Total.toString());
-
-                    Tabla.repaint();
+                    catch(Exception e){}
                 }
                 
                 Datos[row][col] = objeto;
@@ -404,6 +424,7 @@ public class Tienda extends JFrame{
                             txt_Tel_Num.setText(RS.getString("Telefono"));
                             txt_Email.setText(RS.getString("Email"));
                             //txt_.setText(RS.getString(""));
+                            Flag_Existe = true;
                         }
                         else{
                             Limpiame();
@@ -472,42 +493,100 @@ public class Tienda extends JFrame{
                 else if(!txt_Email.getText().matches(".+@.+\\.[a-z]+")){
                     Alerta("El \"E-Mail\" es inválido");
                 }
-                else if(rad_TC.isSelected()){
-                    if(txt_TC_Num.getText().matches("^\\s*$")){
+                else if(rad_TC.isSelected() && txt_TC_Num.getText().matches("^\\s*$")){
                         Alerta("Falta la \"Tarjeta de crédito\"");
-                    }
-                    else if(!txt_TC_Num.getText().matches(".+@.+\\.[a-z]+")){
+                }
+                else if(rad_TC.isSelected() && !txt_TC_Num.getText().matches("([0-9]*)")){
                         Alerta("La \"Tarjeta de crédito\" sólo pueden ser números.");
-                    }
                 }
                 else{
-                    //Si no existe el cliente lo guarda
-                    if(Flag_Existe == 0){
+                    boolean Falta_Datos = false, Error = false;
+
+                    for(int i=0; i<Datos.length; i++){
+                            if(Datos[i][0] != "" && !(Datos[i][2] != "" && Datos[i][3] != "" && Datos[i][4] != "")){
+                                if(Confirma("Faltan datos en la partida numero " + (i+1)) == 0){
+                                    Falta_Datos = true;
+                                }
+                            }
+                    }
+
+                    if(!Falta_Datos){
+                        //Si no existe el cliente lo guarda
                         try{
-                            //Guarda el cliente
-                            //Select.execute("");
+                            if(Flag_Existe){
+                                //Upatea el cliente
+                                Select.execute("UPDATE Clientes SET "
+                                               + "Nombre='" + txt_Nombre.getText() + "',"
+                                               + "Calle='" + txt_Calle.getText() + "',"
+                                               + "Numero='" + txt_Num.getText() + "',"
+                                               + "Colonia='" + txt_Colonia.getText() + "',"
+                                               + "CP='" + txt_CP.getText() + "',"
+                                               + "Lada='" + txt_Tel_Lada.getText() + "',"
+                                               + "Telefono='" + txt_Tel_Num.getText() + "',"
+                                               + "Email='" + txt_Email.getText() + "'");
+                            }
+                            else{
+                                //Guarda el cliente
+                                Select.execute("INSERT INTO Clientes VALUES(NULL, '" + txt_Nombre.getText() + "',"
+                                               + "'" + txt_Calle.getText() + "', '" + txt_Num.getText() + "',"
+                                               + "'" + txt_Colonia.getText() + "', '" + txt_CP.getText() + "',"
+                                               + "'" + txt_Tel_Lada.getText() + "', '" + txt_Tel_Num.getText() + "',"
+                                               + "'" + txt_Email.getText() + "')");
+                            }
                         }
                         catch(Exception p){
                             Alerta("No se pudo guardar el \"Cliente\" porque " + p.getMessage());
+                            Error = true;
                         }
-                    }
 
-                    try{
-                        //Guarda el pedido
-                        //Select.execute("");
-                    }
-                    catch(Exception p){
-                        Alerta("No se pudo guardar el \"Pedido\" porque " + p.getMessage());
-                    }
+                        if(!Error){
+                            String TC_Num, TC_Exp;
 
-                    try{
-                        //Guarda las partidas
-                        for(int i=0; i<Datos.length; i++){
-                            //Select.execute("");
+                            TC_Num = "0";
+                            TC_Exp = "0000-00-00";
+
+                            if(rad_TC.isSelected()){
+                                TC_Num = txt_TC_Num.getText();
+                                TC_Exp = com_TC_Anho.toString() + "-" + com_TC_Mes.toString() + "-" + com_TC_Dia.toString();
+                            }
+
+                            try{
+                                Select.execute("INSERT INTO Pedidos VALUES(NULL, '" + txt_ID_Cliente.getText() + "',"
+                                                   + "NOW(), '" + txt_Subtotal.getText() + "',"
+                                                   + "'" + txt_IVA.getText() + "', '" + txt_Total.getText() + "',"
+                                                   + "'" + TC_Num + "', '" + TC_Exp + "')");
+                            }
+                            catch(Exception p){
+                                Alerta("No se pudo guardar el \"Pedido\" porque " + p.getMessage());
+                                Error = true;
+                            }
                         }
-                    }
-                    catch(Exception p){
-                        Alerta("No se pudieron guardar las \"Partidas\" porque " + p.getMessage());
+
+                        if(!Error){
+                            try{
+                                for(int i=0; i<Datos.length; i++){
+                                    if(Datos[i][0] != "" && Datos[i][2] != "" && Datos[i][3] != "" && Datos[i][4] != ""){
+                                        Select.execute("INSERT INTO Partidas VALUES(NULL, '" + txt_ID.getText() + "',"
+                                                       + "'" + Datos[i][0].toString() + "', '" + Datos[i][3].toString() + "',"
+                                                       + "'" + Datos[i][4].toString() + "', '" + Datos[i][2].toString() + "')");
+
+                                        Select.execute("UPDATE Almacen SET Cantidad = Cantidad - " + Datos[i][2].toString()
+                                                       + " WHERE ID_Producto = '" + Datos[i][0].toString() + "'");
+                                    }
+                                }
+                            }
+                            catch(Exception p){
+                                Alerta("No se pudieron guardar las \"Partidas\" porque " + p.getMessage());
+                                Error = true;
+                            }
+                        }
+
+                        if(!Error){
+                            Limpiame();
+
+                            int Antiguo_ID = Integer.parseInt(txt_ID.getText()) + 1;
+                            txt_ID.setText(Antiguo_ID + "");
+                        }
                     }
                 }
             }
@@ -539,6 +618,12 @@ public class Tienda extends JFrame{
 
     void Alerta(String e){
         JOptionPane.showMessageDialog(null,"Error: " + e);
+    }
+
+    int Confirma(String e){
+        int Respuesta = JOptionPane.showConfirmDialog(null, e, "", JOptionPane.YES_NO_OPTION);
+
+        return Respuesta;
     }
 
     void Conecta(){
@@ -621,6 +706,7 @@ public class Tienda extends JFrame{
     }
 
     void Limpiame(){
+        txt_ID_Cliente.setText("");
         txt_Nombre.setText("");
         txt_Calle.setText("");
         txt_Colonia.setText("");
@@ -633,6 +719,17 @@ public class Tienda extends JFrame{
         txt_Subtotal.setText("");
         txt_IVA.setText("");
         txt_Total.setText("");
+
+        for(int i=0; i<Datos.length; i++){
+            Datos[i][0] = "";
+            Datos[i][1] = "";
+            Datos[i][2] = "";
+            Datos[i][3] = "";
+            Datos[i][4] = "";
+            Datos[i][5] = "";
+        }
+
+        Tabla.repaint();
     }
 
 }
