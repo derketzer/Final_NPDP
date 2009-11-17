@@ -684,7 +684,8 @@ public class Tienda extends JFrame{
 
         try{
             Select.execute("CREATE TABLE IF NOT EXISTS Partidas (ID int(11) NOT NULL auto_increment,"
-                           + "Pedido_ID int(11) NOT NULL, Producto_ID int(11) NOT NULL, Cantidad int(11)"
+                           + "Pedido_ID int(11) NOT NULL, Producto_ID int(11) NOT NULL,"
+                           + "Tamanho varchar(25) NOT NULL, Color varchar(25) NOT NULL, Cantidad int(11) "
                            + "NOT NULL, PRIMARY KEY (ID))");
         }
         catch(Exception e){
