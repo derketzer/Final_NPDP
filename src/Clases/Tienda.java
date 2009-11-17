@@ -2,16 +2,16 @@ package Clases;
 
 //Primero cargamos las librerías necesarias para correr nuestro programita =)
 import javax.swing.*;
-import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import javax.swing.table.*;
 import java.sql.*;
+import java.util.Calendar;
 
 /**
  *
- * @author derketzer
+ * @author Der Ketzer
  * @email  der_ketzer@der-ketzer.com
  */
 
@@ -49,9 +49,8 @@ public class Tienda extends JFrame{
     Container Pantalla = getContentPane();
     GridBagConstraints GBC = new GridBagConstraints();
 
-    ArrayList Anhos = new ArrayList();
-    ArrayList Dias = new ArrayList();
-    Object[] Lista_Anhos;
+    Vector<String> Anhos, Dias;
+    DefaultComboBoxModel com_mod_Anhos, com_mod_Dias;
     Object[] Lista_Dias;
     JComboBox com_TC_Anho, com_TC_Mes, com_TC_Dia, com_Colores, com_Tamanhos;
 
@@ -80,6 +79,8 @@ public class Tienda extends JFrame{
     Connection  Mysqli;
     Statement   State, Select;
 
+    Calendar Calendario = Calendar.getInstance();
+
     String DBhost = "localhost";
     String DBname = "Final_NPDP";
     String DBuser = "npdp";
@@ -92,14 +93,20 @@ public class Tienda extends JFrame{
         Max_Cols    = 7;
         Flag_Existe = false;
 
+        int Anho_Inicial = Calendario.get(Calendar.YEAR);
+
         //Esto crea el combobox de los años para popularlo
         //Crea el arreglo con los años
-        for(int temp = 2009; temp <= 2009+15; temp++){
-            Anhos.add(temp);
+        Vector<String> Anhos = new Vector<String>();
+        Vector<String> Dias = new Vector<String>();
+
+        for(int temp = Anho_Inicial; temp <= Anho_Inicial+15; temp++){
+            Anhos.add(temp + "");
         }
+
         //Crea el arreglo con los dias
         for(int temp = 1; temp <= 31; temp++){
-            Dias.add(temp);
+            Dias.add(temp + "");
         }
 
         lbl_ID                  = new JLabel("ID");
@@ -156,27 +163,30 @@ public class Tienda extends JFrame{
         btn_Limpiar             = new JButton("Limpiar");
         btn_Salir               = new JButton("Salir");
 
-        Conecta();
+        //Convierte el arreglo de años a algo entendible para el combobox
+        com_mod_Anhos = new DefaultComboBoxModel(Anhos);
+        //Convierte el arreglo de dias a algo entendible para el combobox
+        com_mod_Dias = new DefaultComboBoxModel(Dias);
         
+        //Crea el combobox de los meses para la TC
+        com_TC_Dia = new JComboBox();
+        com_TC_Anho = new JComboBox();
+
+        com_TC_Dia.setModel(com_mod_Dias);
+        //Crea el combobox de los meses para la TC
+        com_TC_Mes = new JComboBox(Lista_Meses);
+        //Crea el combobox de los años para la TC
+        com_TC_Anho.setModel(com_mod_Anhos);
+
+        com_Colores = new JComboBox(Lista_Colores);
+
+        com_Tamanhos = new JComboBox(Lista_Tamanhos);
+
+        Conecta();
+
         setTitle("DirectClothing, Inc. - \"The Shirt Company\"");
 
         Pantalla.setLayout(Layout);
-
-        //Convierte el arreglo de años a algo entendible para el combobox
-        Object[] Lista_Anhos = Anhos.toArray();
-        //Convierte el arreglo de dias a algo entendible para el combobox
-        Object[] Lista_Dias = Dias.toArray();
-        
-        //Crea el combobox de los meses para la TC
-        JComboBox com_TC_Dia = new JComboBox(Lista_Dias);
-        //Crea el combobox de los meses para la TC
-        JComboBox com_TC_Mes = new JComboBox(Lista_Meses);
-        //Crea el combobox de los años para la TC
-        JComboBox com_TC_Anho = new JComboBox(Lista_Anhos);
-
-        JComboBox com_Colores = new JComboBox(Lista_Colores);
-
-        JComboBox com_Tamanhos = new JComboBox(Lista_Tamanhos);
 
         Datos = new Object[Max_Cols][Max_Rows];
 
@@ -253,7 +263,7 @@ public class Tienda extends JFrame{
 
                                 for(int i=0; i<Datos.length; i++){
                                     String val3 = Datos[i][6].toString();
-                                    if(val3 != ""){
+                                    if(!val3.equals("")){
                                         Gran_Subtotal += Double.valueOf(val3);
                                     }
                                 }
@@ -297,9 +307,6 @@ public class Tienda extends JFrame{
         buildConstraints(lbl_Titulo     , 0, 0, 6, 1, GridBagConstraints.NONE);
 
         buildConstraints(lbl_Subtitulo  , 0, 1, 6, 1, GridBagConstraints.NONE);
-
-        //buildConstraints(lbl_ID         , 3, 2, 1, 1, GridBagConstraints.NONE);
-        //buildConstraints(txt_ID         , 4, 2, 2, 1, GridBagConstraints.HORIZONTAL);
 
         buildConstraints(lbl_ID_Cliente , 0, 2, 1, 1, GridBagConstraints.NONE);
         buildConstraints(txt_ID_Cliente , 1, 2, 1, 1, GridBagConstraints.HORIZONTAL);
@@ -348,12 +355,12 @@ public class Tienda extends JFrame{
         buildConstraints(com_TC_Mes             , 2, 13, 1, 1, GridBagConstraints.NONE);
         buildConstraints(com_TC_Anho            , 3, 13, 1, 1, GridBagConstraints.NONE);
 
-        //lbl_TC_Num.setVisible(false);
-        //txt_TC_Num.setVisible(false);
-        //lbl_Fecha_Expiracion.setVisible(false);
-        //com_TC_Dia.setVisible(false);
-        //com_TC_Mes.setVisible(false);
-        //com_TC_Anho.setVisible(false);
+        lbl_TC_Num.setVisible(false);
+        txt_TC_Num.setVisible(false);
+        lbl_Fecha_Expiracion.setVisible(false);
+        com_TC_Dia.setVisible(false);
+        com_TC_Mes.setVisible(false);
+        com_TC_Anho.setVisible(false);
 
         buildConstraints(btn_Guardar    , 1, 14, 1, 1, GridBagConstraints.NONE);
         buildConstraints(btn_Limpiar    , 2, 14, 1, 1, GridBagConstraints.NONE);
@@ -376,8 +383,8 @@ public class Tienda extends JFrame{
         btn_Guardar.addActionListener(new Eventos());
         btn_Limpiar.addActionListener(new Eventos());
         btn_Salir.addActionListener(new Eventos());
-        //rad_TC.addActionListener(new Eventos());
-        //rad_Cheque.addActionListener(new Eventos());
+        rad_TC.addActionListener(new Eventos());
+        rad_Cheque.addActionListener(new Eventos());
 
         txt_ID_Cliente.addKeyListener(new KeyAdapter(){
             public void keyPressed(KeyEvent e) {
@@ -394,7 +401,6 @@ public class Tienda extends JFrame{
                             txt_Tel_Lada.setText(RS.getString("Lada"));
                             txt_Tel_Num.setText(RS.getString("Telefono"));
                             txt_Email.setText(RS.getString("Email"));
-                            //txt_.setText(RS.getString(""));
                         }
                         else{
                             Limpiame();
@@ -423,7 +429,6 @@ public class Tienda extends JFrame{
                             txt_Tel_Lada.setText(RS.getString("Lada"));
                             txt_Tel_Num.setText(RS.getString("Telefono"));
                             txt_Email.setText(RS.getString("Email"));
-                            //txt_.setText(RS.getString(""));
                             Flag_Existe = true;
                         }
                         else{
@@ -547,7 +552,7 @@ public class Tienda extends JFrame{
 
                             if(rad_TC.isSelected()){
                                 TC_Num = txt_TC_Num.getText();
-                                TC_Exp = com_TC_Anho.toString() + "-" + com_TC_Mes.toString() + "-" + com_TC_Dia.toString();
+                                TC_Exp = com_TC_Anho.getSelectedItem().toString() +"-"+(com_TC_Mes.getSelectedIndex()+1)+"-"+com_TC_Dia.getSelectedItem().toString();
                             }
 
                             try{
@@ -601,9 +606,9 @@ public class Tienda extends JFrame{
                 lbl_TC_Num.setVisible(true);
                 txt_TC_Num.setVisible(true);
                 lbl_Fecha_Expiracion.setVisible(true);
-                //com_TC_Dia.setVisible(true);
-                //com_TC_Mes.setVisible(true);
-                //com_TC_Anho.setVisible(true);
+                com_TC_Dia.setVisible(true);
+                com_TC_Mes.setVisible(true);
+                com_TC_Anho.setVisible(true);
             }
             else if(e.getSource() == rad_Cheque){
                 lbl_TC_Num.setVisible(false);
@@ -706,7 +711,6 @@ public class Tienda extends JFrame{
     }
 
     void Limpiame(){
-        txt_ID_Cliente.setText("");
         txt_Nombre.setText("");
         txt_Calle.setText("");
         txt_Colonia.setText("");
